@@ -52,3 +52,6 @@ kubeconfig*
 # Temporary files
 .tmp/
 secrets.env
+
+# Allow CLAUDE.md (may be in global gitignore)
+!CLAUDE.md
