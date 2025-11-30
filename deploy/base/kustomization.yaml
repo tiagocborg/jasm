@@ -15,5 +15,5 @@ commonLabels:
   app.kubernetes.io/managed-by: kustomize
 
 images:
-  - name: ghcr.io/codnod/jasm
+  - name: ghcr.io/tiagocborg/jasm
     newTag: latest

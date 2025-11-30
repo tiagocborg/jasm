@@ -1,11 +1,11 @@
 # JASM - Just Another Secret Manager
 
-[![GitHub release](https://img.shields.io/github/v/release/codnod/jasm)](https://github.com/codnod/jasm/releases)
-[![Go Report Card](https://goreportcard.com/badge/github.com/codnod/jasm)](https://goreportcard.com/report/github.com/codnod/jasm)
+[![GitHub release](https://img.shields.io/github/v/release/tiagocborg/jasm)](https://github.com/tiagocborg/jasm/releases)
+[![Go Report Card](https://goreportcard.com/badge/github.com/tiagocborg/jasm)](https://goreportcard.com/report/github.com/tiagocborg/jasm)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Docker Pulls](https://img.shields.io/docker/pulls/codnod/jasm)](https://hub.docker.com/r/codnod/jasm)
+[![Docker Pulls](https://img.shields.io/docker/pulls/tiagocborg/jasm)](https://hub.docker.com/r/tiagocborg/jasm)
 
-JASM (Just Another Secret Manager) is an event-driven, lightweight Kubernetes secrets controller for syncing secrets from AWS Secrets Manager to Kubernetes. Unlike polling-based external secret managers, JASM synchronizes secrets only when pods start, reducing API costs and complexity for small to medium Kubernetes clusters, k3s environments, and edge deployments.
+JASM (Just Another Secret Manager) is an event-driven, lightweight Kubernetes secrets controller for syncing secrets from AWS Secrets Manager and 1Password to Kubernetes. Unlike polling-based external secret managers, JASM synchronizes secrets only when pods start, reducing API costs and complexity for small to medium Kubernetes clusters, k3s environments, and edge deployments.
 
 ## Why JASM?
 
@@ -28,14 +28,15 @@ JASM is ideal for:
 ## Features
 
 - **Annotation-driven**: Simply annotate your pods to sync secrets
-- **AWS Secrets Manager support**: Fetch secrets from AWS with automatic JSON parsing
+- **Multi-provider support**: AWS Secrets Manager and 1Password
 - **Event-driven**: No polling - secrets are synced when pods start
 - **Namespace isolation**: Secrets are created in the same namespace as the pod
 - **Structured logging**: Zap-based logging with Kubernetes best practices
 - **Health checks**: Built-in liveness and readiness probes
 - **Multi-architecture**: Supports amd64 and arm64 platforms
 - **Extensible**: Plugin architecture for adding new secret providers
-- **Flexible authentication**: Supports IAM roles (IRSA/Kiam), instance profiles, and static credentials
+- **Flexible authentication**: Supports IAM roles (IRSA/Kiam), instance profiles, static credentials, and 1Password service account tokens
+- **OTLP Metrics**: OpenTelemetry metrics for observability and alerting
 
 ## Example: Kubernetes Secret Sync with AWS Secrets Manager
 
@@ -57,7 +58,7 @@ spec:
       labels:
         app: my-app
       annotations:
-        jasm.codnod.io/secret-sync: |
+        jasm.io/secret-sync: |
           provider: aws-secretsmanager
           path: /prod/myapp/database
           secretName: db-credentials
@@ -83,6 +84,57 @@ When the pods start, JASM automatically:
 2. Creates a Kubernetes secret named `db-credentials` in the same namespace
 3. Makes it available to your application
 
+## Example: Kubernetes Secret Sync with 1Password
+
+Here's an example using 1Password as the secret provider:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+      annotations:
+        jasm.io/secret-sync: |
+          provider: 1password
+          path: op://Production/PostgreSQL/password
+          secretName: db-credentials
+    spec:
+      containers:
+      - name: app
+        image: my-app:latest
+        env:
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+```
+
+When the pods start, JASM automatically:
+1. Fetches the secret from 1Password vault `Production`, item `PostgreSQL`, field `password`
+2. Creates a Kubernetes secret named `db-credentials` in the same namespace
+3. Makes it available to your application
+
+### 1Password Secret Reference Format
+
+1Password secrets are referenced using the `op://` format:
+- `op://vault/item/field` - Simple field reference
+- `op://vault/item/section/field` - Field within a section
+
+Examples:
+- `op://Production/PostgreSQL/password` - Password field from PostgreSQL item
+- `op://Dev/API Keys/AWS/access_key` - access_key from AWS section
+
 ## Quick Start: Deploy JASM to Kubernetes
 
 ### Using Pre-built Docker Images
@@ -90,7 +142,7 @@ When the pods start, JASM automatically:
 Images are available from GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/codnod/jasm:latest
+docker pull ghcr.io/tiagocborg/jasm:latest
 ```
 
 Available tags: `latest`, `v1.0.0`, `main-sha-abc1234`
@@ -131,7 +183,7 @@ For detailed deployment options and AWS authentication setup, see:
 
 ### Pod Annotation Format
 
-Add the `jasm.codnod.io/secret-sync` annotation to your pod:
+Add the `jasm.io/secret-sync` annotation to your pod:
 
 ```yaml
 apiVersion: v1
@@ -139,7 +191,7 @@ kind: Pod
 metadata:
   name: my-app
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: /prod/myapp/config
       secretName: app-credentials
@@ -162,10 +214,12 @@ spec:
 
 The annotation value is YAML with the following fields:
 
-- `provider`: The secret provider (currently supports `aws-secretsmanager`)
+- `provider`: The secret provider (`aws-secretsmanager` or `1password`)
 - `path`: The path to the secret in the external provider
+  - For AWS: Secret path (e.g., `/prod/myapp/config`)
+  - For 1Password: Secret reference (e.g., `op://vault/item/field`)
 - `secretName`: The name of the Kubernetes secret to create
-- `keys` (optional): Map AWS secret keys to Kubernetes secret key names
+- `keys` (optional): Map secret keys to Kubernetes secret key names
 
 #### Key Mapping
 
@@ -177,7 +231,7 @@ kind: Pod
 metadata:
   name: my-app
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: /prod/myapp/credentials
       secretName: app-secrets
@@ -288,7 +342,7 @@ make test
 ### Run locally
 
 ```bash
-export AWS_PROFILE=codnod
+export AWS_PROFILE=tiagocborg
 make run
 ```
 
@@ -307,7 +361,7 @@ This project uses GitHub Actions for automated builds and publishing:
 - **On version tag** (`v*`): Publishes semantic version tags
 - **On PR**: Builds images for validation (no push)
 
-Images are automatically published to `ghcr.io/codnod/jasm` with multi-architecture support (amd64/arm64).
+Images are automatically published to `ghcr.io/tiagocborg/jasm` with multi-architecture support (amd64/arm64).
 
 ## Configuration: AWS Authentication and Settings
 
@@ -322,12 +376,20 @@ JASM uses the AWS SDK for Go v2, which automatically discovers credentials in th
 
 ### Environment Variables
 
+**AWS Secrets Manager:**
 - `AWS_ACCESS_KEY_ID`: AWS access key (optional, for static credentials)
 - `AWS_SECRET_ACCESS_KEY`: AWS secret key (optional, for static credentials)
 - `AWS_SESSION_TOKEN`: AWS session token (optional, for temporary credentials)
 - `AWS_REGION`: AWS region (default: us-east-1, configurable)
 - `AWS_ROLE_ARN`: IAM role ARN for IRSA (optional, auto-configured by EKS)
 - `AWS_WEB_IDENTITY_TOKEN_FILE`: Token file path for IRSA (optional, auto-configured by EKS)
+
+**1Password:**
+- `OP_SERVICE_ACCOUNT_TOKEN`: 1Password service account token (required for 1Password provider)
+
+**OTLP Metrics:**
+- `OTEL_EXPORTER_OTLP_ENDPOINT`: OTLP exporter endpoint (default: localhost:4317)
+- `OTEL_EXPORTER_OTLP_INSECURE`: Set to "true" for insecure connection (default: false)
 
 ### Controller Flags
 
@@ -398,11 +460,13 @@ kubectl logs -n jasm -l app=jasm
 kubectl describe pod <pod-name>
 
 # Verify annotation
-kubectl get pod <pod-name> -o yaml | grep jasm.codnod.io/secret-sync
+kubectl get pod <pod-name> -o yaml | grep jasm.io/secret-sync
 ```
 
 ## Future Enhancements
 
+- [x] 1Password provider
+- [x] OTLP metrics for observability
 - [ ] HashiCorp Vault provider
 - [ ] Azure Key Vault provider
 - [ ] Google Secret Manager provider

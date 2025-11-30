@@ -4,9 +4,9 @@ metadata:
   name: test-app
   namespace: default
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
-      path: /prod/codnod/config
+      path: /prod/tiagocborg/config
       secretName: app-credentials
 spec:
   serviceAccountName: default

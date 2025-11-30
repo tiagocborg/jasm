@@ -25,7 +25,7 @@ spec:
         fsGroup: 65532
       containers:
       - name: controller
-        image: ghcr.io/codnod/jasm:latest
+        image: ghcr.io/tiagocborg/jasm:latest
         imagePullPolicy: IfNotPresent
         command:
         - /controller

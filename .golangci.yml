@@ -22,6 +22,6 @@ linters-settings:
   gofmt:
     simplify: true
   goimports:
-    local-prefixes: github.com/codnod/jasm
+    local-prefixes: github.com/tiagocborg/jasm
   revive:
     severity: error

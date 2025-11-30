@@ -45,7 +45,7 @@ Images are tagged based on the trigger:
 
 Images are published to:
 ```
-ghcr.io/codnod/jasm:TAG
+ghcr.io/tiagocborg/jasm:TAG
 ```
 
 #### Permissions

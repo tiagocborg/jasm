@@ -1,11 +1,14 @@
 // Package provider defines interfaces and implementations for fetching secrets
 // from external secret management systems like AWS Secrets Manager, HashiCorp Vault,
-// and Azure Key Vault.
+// Azure Key Vault, and 1Password.
 package provider
 
 import (
 	"context"
 	"fmt"
+	"os"
+
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // SecretProvider is the interface for external secret sources.
@@ -55,6 +58,7 @@ func (r *ProviderRegistry) List() []string {
 // DefaultProviderRegistry creates a registry with all available providers.
 // This is the main entry point for initializing providers in the controller.
 func DefaultProviderRegistry(ctx context.Context) (*ProviderRegistry, error) {
+	logger := log.FromContext(ctx)
 	registry := NewProviderRegistry()
 
 	// Register AWS Secrets Manager provider
@@ -63,13 +67,20 @@ func DefaultProviderRegistry(ctx context.Context) (*ProviderRegistry, error) {
 		return nil, fmt.Errorf("failed to create AWS provider: %w", err)
 	}
 	registry.Register(awsProvider)
+	logger.Info("AWS Secrets Manager provider registered")
 
-	// Future providers can be added here:
-	// vaultProvider, err := NewVaultProvider(ctx)
-	// if err != nil {
-	//     return nil, fmt.Errorf("failed to create Vault provider: %w", err)
-	// }
-	// registry.Register(vaultProvider)
+	// Register 1Password provider (only if token is configured)
+	if os.Getenv("OP_SERVICE_ACCOUNT_TOKEN") != "" {
+		opProvider, err := NewOnePasswordProvider(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create 1Password provider: %w", err)
+		}
+		registry.Register(opProvider)
+		opProvider.Start(ctx)
+		logger.Info("1Password provider registered")
+	} else {
+		logger.Info("1Password provider not configured (OP_SERVICE_ACCOUNT_TOKEN not set)")
+	}
 
 	return registry, nil
 }

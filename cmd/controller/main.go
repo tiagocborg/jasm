@@ -2,7 +2,7 @@
 // providers (AWS Secrets Manager, HashiCorp Vault, Azure Key Vault) to
 // Kubernetes secrets based on pod annotations.
 //
-// The controller watches for pods with the annotation "jasm.codnod.io/secret-sync"
+// The controller watches for pods with the annotation "jasm.io/secret-sync"
 // and automatically creates or updates Kubernetes secrets with data fetched from
 // the specified external provider.
 package main
@@ -21,8 +21,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
-	"github.com/codnod/jasm/internal/controller"
-	"github.com/codnod/jasm/internal/provider"
+	"github.com/tiagocborg/jasm/internal/controller"
+	"github.com/tiagocborg/jasm/internal/provider"
 )
 
 var (
@@ -63,7 +63,7 @@ func main() {
 		},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "jasm.codnod.io",
+		LeaderElectionID:       "jasm.io",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to create manager")

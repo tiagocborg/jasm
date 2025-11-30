@@ -81,14 +81,14 @@ feat!: redesign annotation format for better extensibility
 BREAKING CHANGE: Annotation structure changed from single-level
 to nested format. Update all pod annotations from:
 
-  jasm.codnod.io/secret-sync: |
+  jasm.io/secret-sync: |
     provider: aws-secretsmanager
     path: /prod/myapp/database
     secretName: db-credentials
 
 To:
 
-  jasm.codnod.io/secret-sync: |
+  jasm.io/secret-sync: |
     provider: aws-secretsmanager
     path: /prod/myapp/database
     secretName: db-credentials

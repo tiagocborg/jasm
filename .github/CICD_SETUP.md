@@ -96,8 +96,8 @@ Builds and pushes multi-architecture Docker images:
 
 **Tags**:
 ```
-ghcr.io/codnod/jasm:v1.2.0    # Specific version
-ghcr.io/codnod/jasm:latest    # Latest release
+ghcr.io/tiagocborg/jasm:v1.2.0    # Specific version
+ghcr.io/tiagocborg/jasm:latest    # Latest release
 ```
 
 **Permissions needed**:
@@ -198,8 +198,8 @@ Actions:
   2. Git tag created: v1.1.0
   3. GitHub Release published with changelog
   4. Docker images built and pushed:
-     - ghcr.io/codnod/jasm:v1.1.0
-     - ghcr.io/codnod/jasm:latest
+     - ghcr.io/tiagocborg/jasm:v1.1.0
+     - ghcr.io/tiagocborg/jasm:latest
 ```
 
 No manual steps needed! ✨

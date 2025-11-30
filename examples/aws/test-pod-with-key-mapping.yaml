@@ -3,7 +3,7 @@ kind: Pod
 metadata:
   name: test-pod-key-mapping
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: test-secret
       secretName: test-secret-mapped

@@ -18,9 +18,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/codnod/jasm/internal/annotation"
-	"github.com/codnod/jasm/internal/events"
-	"github.com/codnod/jasm/internal/provider"
+	"github.com/tiagocborg/jasm/internal/annotation"
+	"github.com/tiagocborg/jasm/internal/events"
+	"github.com/tiagocborg/jasm/internal/provider"
 )
 
 // PodSecretReconciler reconciles Pod objects with secret sync annotations.
@@ -33,15 +33,15 @@ type PodSecretReconciler struct {
 
 const (
 	// AnnotationKey is the annotation key for secret sync configuration.
-	AnnotationKey = "jasm.codnod.io/secret-sync"
+	AnnotationKey = "jasm.io/secret-sync"
 	// ManagedByLabel identifies secrets managed by JASM.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
 	// ManagedByValue is the value for the managed-by label.
 	ManagedByValue = "jasm"
 	// SourcePathAnnotation tracks the external source path.
-	SourcePathAnnotation = "jasm.codnod.io/source-path"
+	SourcePathAnnotation = "jasm.io/source-path"
 	// SyncedAtAnnotation tracks the last sync timestamp.
-	SyncedAtAnnotation = "jasm.codnod.io/synced-at"
+	SyncedAtAnnotation = "jasm.io/synced-at"
 )
 
 // Reconcile handles pod events and synchronizes secrets.

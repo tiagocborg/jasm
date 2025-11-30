@@ -255,10 +255,10 @@ main branch has commits:
 
 Result: Version bumped to v1.2.0
 Changelog auto-generated from commits
-Docker image pushed as ghcr.io/codnod/jasm:v1.2.0 and :latest
+Docker image pushed as ghcr.io/tiagocborg/jasm:v1.2.0 and :latest
 ```
 
-Images are published to: `ghcr.io/codnod/jasm`
+Images are published to: `ghcr.io/tiagocborg/jasm`
 
 ## Getting Help
 

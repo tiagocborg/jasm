@@ -11,7 +11,7 @@ import (
 
 const (
 	// AnnotationKey is the annotation key for secret sync configuration
-	AnnotationKey = "jasm.codnod.io/secret-sync"
+	AnnotationKey = "jasm.io/secret-sync"
 )
 
 // PodAnnotation represents the parsed annotation structure.

@@ -193,7 +193,7 @@ kind: Pod
 metadata:
   name: test-app
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: /prod/myapp/database
       secretName: db-credentials
@@ -279,7 +279,7 @@ kind: Pod
 metadata:
   name: app-with-key-mapping
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: database-credentials
       secretName: app-db-credentials
@@ -350,7 +350,7 @@ kind: Pod
 metadata:
   name: app-with-volume
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: /prod/myapp/database
       secretName: db-config
@@ -385,7 +385,7 @@ metadata:
   name: prod-app
   namespace: production
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: /prod/myapp/database
       secretName: db-credentials
@@ -397,7 +397,7 @@ metadata:
   name: staging-app
   namespace: staging
   annotations:
-    jasm.codnod.io/secret-sync: |
+    jasm.io/secret-sync: |
       provider: aws-secretsmanager
       path: /staging/myapp/database
       secretName: db-credentials

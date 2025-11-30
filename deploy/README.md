@@ -122,7 +122,7 @@ Edit the image tag in the overlay:
 ```yaml
 # deploy/overlays/prod/kustomization.yaml
 images:
-  - name: ghcr.io/codnod/jasm
+  - name: ghcr.io/tiagocborg/jasm
     newTag: v1.2.0  # Pin to specific version
 ```
 
@@ -258,7 +258,7 @@ metadata:
   name: jasm
 spec:
   source:
-    repoURL: https://github.com/codnod/jasm
+    repoURL: https://github.com/tiagocborg/jasm
     targetRevision: main
     path: deploy/overlays/prod
   destination:

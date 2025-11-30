@@ -12,7 +12,7 @@ spec:
       labels:
         app: test-app-key-mapping
       annotations:
-        jasm.codnod.io/secret-sync: |
+        jasm.io/secret-sync: |
           provider: aws-secretsmanager
           path: database-credentials
           secretName: app-db-credentials
