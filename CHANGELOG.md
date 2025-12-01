@@ -1,3 +1,13 @@
+## [1.1.0](https://github.com/tiagocborg/jasm/compare/v1.0.0...v1.1.0) (2025-12-01)
+
+### Features
+
+* **1password:** support fetching all fields from an item ([f905ba4](https://github.com/tiagocborg/jasm/commit/f905ba480422df819bdf5834bb1122cf3b7eb47d))
+
+### Bug Fixes
+
+* fetch tags before semantic-release ([78d1c56](https://github.com/tiagocborg/jasm/commit/78d1c56a0455992c7dcc533d7b880821ab8b2b18))
+
 ## 1.0.0 (2025-12-01)
 
 ### ⚠ BREAKING CHANGES
