@@ -19,7 +19,15 @@ func (r *SecretReference) String() string {
 	if r.Section != "" {
 		return fmt.Sprintf("op://%s/%s/%s/%s", r.Vault, r.Item, r.Section, r.Field)
 	}
-	return fmt.Sprintf("op://%s/%s/%s", r.Vault, r.Item, r.Field)
+	if r.Field != "" {
+		return fmt.Sprintf("op://%s/%s/%s", r.Vault, r.Item, r.Field)
+	}
+	return fmt.Sprintf("op://%s/%s", r.Vault, r.Item)
+}
+
+// HasField returns true if a specific field is requested.
+func (r *SecretReference) HasField() bool {
+	return r.Field != ""
 }
 
 // Validate checks if the secret reference is valid.
@@ -30,14 +38,13 @@ func (r *SecretReference) Validate() error {
 	if r.Item == "" {
 		return fmt.Errorf("item name is required")
 	}
-	if r.Field == "" {
-		return fmt.Errorf("field name is required")
-	}
+	// Field is optional - when not specified, all fields are fetched
 	return nil
 }
 
 // ParseSecretReference parses a 1Password secret reference string.
 // Supported formats:
+//   - op://vault/item (fetches all fields)
 //   - op://vault/item/field
 //   - op://vault/item/section/field
 func ParseSecretReference(ref string) (*SecretReference, error) {
@@ -71,6 +78,12 @@ func ParseSecretReference(ref string) (*SecretReference, error) {
 	parts = nonEmpty
 
 	switch len(parts) {
+	case 2:
+		// op://vault/item (fetch all fields)
+		return &SecretReference{
+			Vault: parts[0],
+			Item:  parts[1],
+		}, nil
 	case 3:
 		// op://vault/item/field
 		return &SecretReference{
@@ -87,11 +100,9 @@ func ParseSecretReference(ref string) (*SecretReference, error) {
 			Field:   parts[3],
 		}, nil
 	case 0:
-		return nil, fmt.Errorf("invalid 1Password secret reference: missing vault, item, and field")
+		return nil, fmt.Errorf("invalid 1Password secret reference: missing vault and item")
 	case 1:
-		return nil, fmt.Errorf("invalid 1Password secret reference: missing item and field")
-	case 2:
-		return nil, fmt.Errorf("invalid 1Password secret reference: missing field")
+		return nil, fmt.Errorf("invalid 1Password secret reference: missing item")
 	default:
 		return nil, fmt.Errorf("invalid 1Password secret reference: too many path components")
 	}

@@ -64,7 +64,10 @@ func (p *OnePasswordProvider) Name() string {
 }
 
 // FetchSecret retrieves a secret from 1Password.
-// The path should be in op://vault/item/field or op://vault/item/section/field format.
+// Supported path formats:
+//   - op://vault/item (fetches all fields)
+//   - op://vault/item/field
+//   - op://vault/item/section/field
 func (p *OnePasswordProvider) FetchSecret(ctx context.Context, path string) (map[string]string, error) {
 	// Parse the secret reference
 	ref, err := ParseSecretReference(path)
@@ -77,6 +80,30 @@ func (p *OnePasswordProvider) FetchSecret(ctx context.Context, path string) (map
 	}
 
 	start := time.Now()
+
+	// If no field is specified, fetch all fields from the item
+	if !ref.HasField() {
+		secrets, err := p.fetchAllFields(ctx, ref)
+		duration := time.Since(start)
+
+		if err != nil {
+			p.metrics.RecordRequest(ctx, "error", ref.Vault)
+			p.metrics.RecordDuration(ctx, duration, "error")
+
+			if isRateLimited(err) {
+				p.metrics.RecordRateLimit(ctx)
+				return nil, fmt.Errorf("rate limited by 1Password API")
+			}
+
+			return nil, p.wrapError(err, ref)
+		}
+
+		p.metrics.RecordRequest(ctx, "success", ref.Vault)
+		p.metrics.RecordDuration(ctx, duration, "success")
+		return secrets, nil
+	}
+
+	// Fetch a single field
 	secret, err := p.resolveSecret(ctx, ref.String())
 	duration := time.Since(start)
 
@@ -99,6 +126,74 @@ func (p *OnePasswordProvider) FetchSecret(ctx context.Context, path string) (map
 	return map[string]string{
 		ref.Field: secret,
 	}, nil
+}
+
+// fetchAllFields retrieves all fields from a 1Password item.
+func (p *OnePasswordProvider) fetchAllFields(ctx context.Context, ref *SecretReference) (map[string]string, error) {
+	// Look up vault ID by name
+	vaultID, err := p.lookupVaultID(ctx, ref.Vault)
+	if err != nil {
+		return nil, err
+	}
+
+	// Look up item ID by title
+	itemID, err := p.lookupItemID(ctx, vaultID, ref.Item)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the full item with all fields
+	item, err := p.client.Items().Get(ctx, vaultID, itemID)
+	if err != nil {
+		return nil, err
+	}
+
+	secrets := make(map[string]string)
+	for _, field := range item.Fields {
+		// Skip fields without a title or value
+		if field.Title == "" || field.Value == "" {
+			continue
+		}
+		secrets[field.Title] = field.Value
+	}
+
+	if len(secrets) == 0 {
+		return nil, fmt.Errorf("no fields found in item %q", ref.Item)
+	}
+
+	return secrets, nil
+}
+
+// lookupVaultID finds a vault's UUID by its name.
+func (p *OnePasswordProvider) lookupVaultID(ctx context.Context, vaultName string) (string, error) {
+	vaults, err := p.client.Vaults().List(ctx)
+	if err != nil {
+		return "", fmt.Errorf("failed to list vaults: %w", err)
+	}
+
+	for _, vault := range vaults {
+		if vault.Title == vaultName {
+			return vault.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("vault %q not found", vaultName)
+}
+
+// lookupItemID finds an item's UUID by its title within a vault.
+func (p *OnePasswordProvider) lookupItemID(ctx context.Context, vaultID, itemTitle string) (string, error) {
+	items, err := p.client.Items().List(ctx, vaultID)
+	if err != nil {
+		return "", fmt.Errorf("failed to list items: %w", err)
+	}
+
+	for _, item := range items {
+		if item.Title == itemTitle {
+			return item.ID, nil
+		}
+	}
+
+	return "", fmt.Errorf("item %q not found in vault", itemTitle)
 }
 
 // Start begins the retry queue processor.

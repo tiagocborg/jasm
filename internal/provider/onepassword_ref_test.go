@@ -87,16 +87,18 @@ func TestParseSecretReference(t *testing.T) {
 			errMsg:  "empty path",
 		},
 		{
-			name:    "missing item and field",
+			name:    "missing item",
 			ref:     "op://vault",
 			wantErr: true,
-			errMsg:  "missing item and field",
+			errMsg:  "missing item",
 		},
 		{
-			name:    "missing field",
-			ref:     "op://vault/item",
-			wantErr: true,
-			errMsg:  "missing field",
+			name: "valid two-part reference (all fields)",
+			ref:  "op://vault/item",
+			want: &SecretReference{
+				Vault: "vault",
+				Item:  "item",
+			},
 		},
 		{
 			name:    "too many parts",
@@ -160,6 +162,14 @@ func TestSecretReference_String(t *testing.T) {
 		ref  SecretReference
 		want string
 	}{
+		{
+			name: "without field (all fields)",
+			ref: SecretReference{
+				Vault: "Production",
+				Item:  "PostgreSQL",
+			},
+			want: "op://Production/PostgreSQL",
+		},
 		{
 			name: "without section",
 			ref: SecretReference{
@@ -235,13 +245,12 @@ func TestSecretReference_Validate(t *testing.T) {
 			errMsg:  "item name is required",
 		},
 		{
-			name: "missing field",
+			name: "valid reference without field (all fields)",
 			ref: SecretReference{
 				Vault: "vault",
 				Item:  "item",
 			},
-			wantErr: true,
-			errMsg:  "field name is required",
+			wantErr: false,
 		},
 	}
 
@@ -260,6 +269,40 @@ func TestSecretReference_Validate(t *testing.T) {
 			}
 			if err != nil {
 				t.Errorf("Validate() unexpected error = %v", err)
+			}
+		})
+	}
+}
+
+func TestSecretReference_HasField(t *testing.T) {
+	tests := []struct {
+		name string
+		ref  SecretReference
+		want bool
+	}{
+		{
+			name: "with field",
+			ref: SecretReference{
+				Vault: "vault",
+				Item:  "item",
+				Field: "field",
+			},
+			want: true,
+		},
+		{
+			name: "without field",
+			ref: SecretReference{
+				Vault: "vault",
+				Item:  "item",
+			},
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.ref.HasField(); got != tt.want {
+				t.Errorf("HasField() = %v, want %v", got, tt.want)
 			}
 		})
 	}

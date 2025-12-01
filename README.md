@@ -86,7 +86,7 @@ When the pods start, JASM automatically:
 
 ## Example: Kubernetes Secret Sync with 1Password
 
-Here's an example using 1Password as the secret provider:
+Here's an example using 1Password as the secret provider to fetch all fields from an item:
 
 ```yaml
 apiVersion: apps/v1
@@ -106,13 +106,18 @@ spec:
       annotations:
         jasm.io/secret-sync: |
           provider: 1password
-          path: op://Production/PostgreSQL/password
+          path: op://Production/PostgreSQL
           secretName: db-credentials
     spec:
       containers:
       - name: app
         image: my-app:latest
         env:
+        - name: DB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: host
         - name: DB_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -121,17 +126,29 @@ spec:
 ```
 
 When the pods start, JASM automatically:
-1. Fetches the secret from 1Password vault `Production`, item `PostgreSQL`, field `password`
-2. Creates a Kubernetes secret named `db-credentials` in the same namespace
-3. Makes it available to your application
+1. Fetches all fields from 1Password vault `Production`, item `PostgreSQL`
+2. Creates a Kubernetes secret named `db-credentials` with each field as a key
+3. Makes all fields available to your application
+
+You can also fetch a single field using `op://vault/item/field` format:
+
+```yaml
+annotations:
+  jasm.io/secret-sync: |
+    provider: 1password
+    path: op://Production/PostgreSQL/password
+    secretName: db-password
+```
 
 ### 1Password Secret Reference Format
 
 1Password secrets are referenced using the `op://` format:
-- `op://vault/item/field` - Simple field reference
-- `op://vault/item/section/field` - Field within a section
+- `op://vault/item` - Fetches all fields from the item as key-value pairs
+- `op://vault/item/field` - Fetches a single field
+- `op://vault/item/section/field` - Fetches a field within a section
 
 Examples:
+- `op://Production/PostgreSQL` - All fields from PostgreSQL item
 - `op://Production/PostgreSQL/password` - Password field from PostgreSQL item
 - `op://Dev/API Keys/AWS/access_key` - access_key from AWS section
 
@@ -217,7 +234,7 @@ The annotation value is YAML with the following fields:
 - `provider`: The secret provider (`aws-secretsmanager` or `1password`)
 - `path`: The path to the secret in the external provider
   - For AWS: Secret path (e.g., `/prod/myapp/config`)
-  - For 1Password: Secret reference (e.g., `op://vault/item/field`)
+  - For 1Password: Secret reference (e.g., `op://vault/item` for all fields, or `op://vault/item/field` for a single field)
 - `secretName`: The name of the Kubernetes secret to create
 - `keys` (optional): Map secret keys to Kubernetes secret key names
 
