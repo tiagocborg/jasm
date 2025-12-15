@@ -51,13 +51,20 @@ jobs:
           fi
 
   build-and-push:
-    name: Build and Push Docker Image
+    name: Build and Push Docker Images
     needs: release
     if: needs.release.outputs.published == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    strategy:
+      matrix:
+        include:
+          - target: minimal
+            suffix: ""
+          - target: bitwarden
+            suffix: "-bitwarden"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -88,19 +95,20 @@ jobs:
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "image_name=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (${{ matrix.target }})
         uses: docker/build-push-action@v5
         with:
           context: .
+          target: ${{ matrix.target }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ steps.version.outputs.image_name }}:${{ steps.version.outputs.version }}
-            ghcr.io/${{ steps.version.outputs.image_name }}:latest
+            ghcr.io/${{ steps.version.outputs.image_name }}${{ matrix.suffix }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ steps.version.outputs.image_name }}${{ matrix.suffix }}:latest
           labels: |
-            org.opencontainers.image.title=JASM
+            org.opencontainers.image.title=JASM${{ matrix.suffix }}
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ steps.version.outputs.sha_short }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.target }}

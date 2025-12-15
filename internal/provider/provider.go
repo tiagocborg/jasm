@@ -82,5 +82,18 @@ func DefaultProviderRegistry(ctx context.Context) (*ProviderRegistry, error) {
 		logger.Info("1Password provider not configured (OP_SERVICE_ACCOUNT_TOKEN not set)")
 	}
 
+	// Register Bitwarden provider (only if enabled)
+	if os.Getenv(enableBitwardenEnv) == "true" {
+		bwProvider, err := NewBitwardenProvider(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Bitwarden provider: %w", err)
+		}
+		registry.Register(bwProvider)
+		bwProvider.Start(ctx)
+		logger.Info("Bitwarden provider registered", "serverURL", os.Getenv(bwServerURLEnv))
+	} else {
+		logger.Info("Bitwarden provider not enabled (set ENABLE_BITWARDEN=true)")
+	}
+
 	return registry, nil
 }

@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jasm
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jasm-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jasm-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jasm-role
+subjects:
+  - kind: ServiceAccount
+    name: jasm
+    namespace: kube-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jasm
+  namespace: kube-system
+  labels:
+    app: jasm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jasm
+  template:
+    metadata:
+      labels:
+        app: jasm
+    spec:
+      serviceAccountName: jasm
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+      containers:
+        - name: controller
+          image: ghcr.io/tiagocborg/jasm:bitwarden-test
+          imagePullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 8080
+            - name: health
+              containerPort: 8081
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: false
+          env:
+            - name: ENABLE_BITWARDEN
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: jasm-vaultwarden
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jasm-test
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-app
+  namespace: jasm-test
+  annotations:
+    jasm.io/secret-sync: |
+      provider: bitwarden
+      path: bw://folder/jasm-test
+      secretName: test-bitwarden-secret
+spec:
+  containers:
+    - name: app
+      image: busybox
+      command: ["sleep", "infinity"]

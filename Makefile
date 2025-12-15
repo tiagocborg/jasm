@@ -59,7 +59,15 @@ build:
 .PHONY: docker-build
 docker-build: check-k8s-context
 	eval $$(minikube docker-env); \
-	docker build -t $(DOCKER_IMAGE):$(VERSION) .
+	docker build --target minimal -t $(DOCKER_IMAGE):$(VERSION) .
+
+.PHONY: docker-build-bitwarden
+docker-build-bitwarden: check-k8s-context
+	eval $$(minikube docker-env); \
+	docker build --target bitwarden -t $(DOCKER_IMAGE):$(VERSION)-bitwarden .
+
+.PHONY: docker-build-all
+docker-build-all: docker-build docker-build-bitwarden
 
 # Deployment
 .PHONY: deploy
@@ -86,14 +94,16 @@ clean:
 .PHONY: help
 help:
 	@echo "Caronte Makefile Commands:"
-	@echo "  make fmt              - Format Go code"
-	@echo "  make vet              - Run Go vet"
-	@echo "  make test             - Run unit tests"
-	@echo "  make test-integration - Run integration tests (requires minikube)"
-	@echo "  make test-e2e         - Run E2E tests (requires minikube + AWS)"
-	@echo "  make build            - Build controller binary"
-	@echo "  make docker-build     - Build Docker image in minikube"
-	@echo "  make deploy           - Deploy to minikube"
-	@echo "  make undeploy         - Remove from minikube"
-	@echo "  make run              - Run controller locally"
-	@echo "  make clean            - Clean build artifacts"
+	@echo "  make fmt                    - Format Go code"
+	@echo "  make vet                    - Run Go vet"
+	@echo "  make test                   - Run unit tests"
+	@echo "  make test-integration       - Run integration tests (requires minikube)"
+	@echo "  make test-e2e               - Run E2E tests (requires minikube + AWS)"
+	@echo "  make build                  - Build controller binary"
+	@echo "  make docker-build           - Build minimal Docker image in minikube"
+	@echo "  make docker-build-bitwarden - Build Docker image with Bitwarden CLI"
+	@echo "  make docker-build-all       - Build both Docker image variants"
+	@echo "  make deploy                 - Deploy to minikube"
+	@echo "  make undeploy               - Remove from minikube"
+	@echo "  make run                    - Run controller locally"
+	@echo "  make clean                  - Clean build artifacts"
