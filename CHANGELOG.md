@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/tiagocborg/jasm/compare/v1.1.0...v1.2.0) (2025-12-15)
+
+### Features
+
+* **bitwarden:** add Bitwarden/Vaultwarden secret provider with direct API ([530b3d8](https://github.com/tiagocborg/jasm/commit/530b3d84ca02b934cc8f87cdd4b3ec821e198786))
+
 ## [1.1.0](https://github.com/tiagocborg/jasm/compare/v1.0.0...v1.1.0) (2025-12-01)
 
 ### Features
